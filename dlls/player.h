@@ -234,6 +234,7 @@ public:
 	bool Restore(CRestore& restore) override;
 	void RenewItems();
 	void PackDeadPlayerItems();
+	void ResetHealthArmor();
 	void RemoveAllItems(bool removeSuit);
 	bool SwitchWeapon(CBasePlayerItem* pWeapon);
 

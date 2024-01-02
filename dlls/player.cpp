@@ -709,6 +709,12 @@ void CBasePlayer::PackDeadPlayerItems()
 	RemoveAllItems(true); // now strip off everything that wasn't handled by the code above.
 }
 
+void CBasePlayer::ResetHealthArmor()
+{
+	pev->health = 100;
+	pev->armorvalue = 0;
+}
+
 void CBasePlayer::RemoveAllItems(bool removeSuit)
 {
 	if (m_pActiveItem)
@@ -4835,7 +4841,10 @@ void CStripWeapons::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE 
 	}
 
 	if (pPlayer)
+	{
+		pPlayer->ResetHealthArmor(); // Reset health and armor as well
 		pPlayer->RemoveAllItems(false);
+	}
 }
 
 
