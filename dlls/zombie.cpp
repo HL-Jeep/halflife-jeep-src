@@ -332,3 +332,43 @@ int CZombie::IgnoreConditions()
 
 	return iIgnore;
 }
+
+class CFastZombie : public CZombie
+{
+public:
+	void Spawn() override;
+	void Precache() override;
+};
+
+LINK_ENTITY_TO_CLASS(monster_fast_zombie, CFastZombie);
+
+void CFastZombie::Spawn()
+{
+	Precache();
+
+	SET_MODEL(ENT(pev), "models/fast_zombie.mdl");
+	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
+
+	pev->solid = SOLID_SLIDEBOX;
+	pev->movetype = MOVETYPE_STEP;
+	m_bloodColor = BLOOD_COLOR_GREEN;
+	pev->health = gSkillData.zombieHealth;
+	pev->view_ofs = VEC_VIEW; // position of the eyes relative to monster's origin.
+	m_flFieldOfView = 0.5;	  // indicates the width of this monster's forward view cone ( as a dotproduct result )
+	m_MonsterState = MONSTERSTATE_NONE;
+	m_afCapability = bits_CAP_DOORS_GROUP;
+
+	MonsterInit();
+}
+
+void CFastZombie::Precache()
+{
+	PRECACHE_MODEL("models/fast_zombie.mdl");
+
+	PRECACHE_SOUND_ARRAY(pAttackHitSounds);
+	PRECACHE_SOUND_ARRAY(pAttackMissSounds);
+	PRECACHE_SOUND_ARRAY(pAttackSounds);
+	PRECACHE_SOUND_ARRAY(pIdleSounds);
+	PRECACHE_SOUND_ARRAY(pAlertSounds);
+	PRECACHE_SOUND_ARRAY(pPainSounds);
+}
