@@ -606,9 +606,10 @@ void CBaseMonster::Killed(entvars_t* pevAttacker, int iGib)
 
 	// tell owner ( if any ) that we're dead.This is mostly for MonsterMaker functionality.
 	CBaseEntity* pOwner = CBaseEntity::Instance(pev->owner);
-	if (pOwner)
+	if (pOwner && !m_SentDeathNotice)
 	{
 		pOwner->DeathNotice(pev);
+		m_SentDeathNotice = true;
 	}
 
 	if (ShouldGibMonster(iGib))

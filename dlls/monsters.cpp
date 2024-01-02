@@ -101,6 +101,8 @@ TYPEDESCRIPTION CBaseMonster::m_SaveData[] =
 		DEFINE_FIELD(CBaseMonster, m_scriptState, FIELD_INTEGER),
 		DEFINE_FIELD(CBaseMonster, m_pCine, FIELD_CLASSPTR),
 		DEFINE_FIELD(CBaseMonster, m_AllowItemDropping, FIELD_BOOLEAN),
+
+		DEFINE_FIELD(CBaseMonster, m_SentDeathNotice, FIELD_BOOLEAN),
 };
 
 //IMPLEMENT_SAVERESTORE( CBaseMonster, CBaseToggle );
@@ -513,6 +515,14 @@ CSound* CBaseMonster::PBestScent()
 //=========================================================
 void CBaseMonster::MonsterThink()
 {
+	// HACKHACK -- Send death notice. Killed doesn't get called if the monster is killed during a scripted sequence.
+	CBaseEntity* pOwner = CBaseEntity::Instance(pev->owner);
+	if (pOwner && pev->deadflag == DEAD_DYING && !m_SentDeathNotice)
+	{
+		pOwner->DeathNotice(pev);
+		m_SentDeathNotice = true;
+	}
+
 	pev->nextthink = gpGlobals->time + 0.1; // keep monster thinking.
 
 

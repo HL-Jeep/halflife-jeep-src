@@ -111,6 +111,8 @@ public:
 
 	bool m_AllowItemDropping = true;
 
+	bool m_SentDeathNotice = false;
+
 	bool Save(CSave& save) override;
 	bool Restore(CRestore& restore) override;
 

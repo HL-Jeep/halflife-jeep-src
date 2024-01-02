@@ -676,6 +676,8 @@ void CScientist::Spawn()
 
 	MonsterInit();
 	SetUse(&CScientist::FollowerUse);
+
+	m_afMemory = m_afMemory | bits_MEMORY_PROVOKED; // Always be scared of player
 }
 
 //=========================================================
