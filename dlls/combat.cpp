@@ -30,6 +30,9 @@
 #include "weapons.h"
 #include "func_break.h"
 
+#include <vector>
+#include <utility>
+
 extern Vector VecBModelOrigin(entvars_t* pevBModel);
 
 #define GERMAN_GIB_COUNT 4
@@ -1523,6 +1526,111 @@ Vector CBaseEntity::FireBulletsPlayer(unsigned int cShots, Vector vecSrc, Vector
 		x = UTIL_SharedRandomFloat(shared_rand + iShot, -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (1 + iShot), -0.5, 0.5);
 		y = UTIL_SharedRandomFloat(shared_rand + (2 + iShot), -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (3 + iShot), -0.5, 0.5);
 		z = x * x + y * y;
+
+		Vector vecDir = vecDirShooting +
+						x * vecSpread.x * vecRight +
+						y * vecSpread.y * vecUp;
+		Vector vecEnd;
+
+		vecEnd = vecSrc + vecDir * flDistance;
+		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev) /*pentIgnore*/, &tr);
+
+		// do damage, paint decals
+		if (tr.flFraction != 1.0)
+		{
+			CBaseEntity* pEntity = CBaseEntity::Instance(tr.pHit);
+
+			if (0 != iDamage)
+			{
+				pEntity->TraceAttack(pevAttacker, iDamage, vecDir, &tr, DMG_BULLET | ((iDamage > 16) ? DMG_ALWAYSGIB : DMG_NEVERGIB));
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType);
+			}
+			else
+				switch (iBulletType)
+				{
+				default:
+				case BULLET_PLAYER_9MM:
+					pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg9MM, vecDir, &tr, DMG_BULLET);
+					break;
+
+				case BULLET_PLAYER_MP5:
+					pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgMP5, vecDir, &tr, DMG_BULLET);
+					break;
+
+				case BULLET_PLAYER_BUCKSHOT:
+					// make distance based!
+					pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgBuckshot, vecDir, &tr, DMG_BULLET);
+					break;
+
+				case BULLET_PLAYER_357:
+					pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg357, vecDir, &tr, DMG_BULLET);
+					break;
+
+				case BULLET_NONE: // FIX
+					pEntity->TraceAttack(pevAttacker, 50, vecDir, &tr, DMG_CLUB);
+					TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+					// only decal glass
+					if (!FNullEnt(tr.pHit) && VARS(tr.pHit)->rendermode != 0)
+					{
+						UTIL_DecalTrace(&tr, DECAL_GLASSBREAK1 + RANDOM_LONG(0, 2));
+					}
+
+					break;
+				}
+		}
+		// make bullet trails
+		UTIL_BubbleTrail(vecSrc, tr.vecEndPos, (flDistance * tr.flFraction) / 64.0);
+	}
+	ApplyMultiDamage(pev, pevAttacker);
+
+	return Vector(x * vecSpread.x, y * vecSpread.y, 0.0);
+}
+
+/*
+================
+FireBulletsConsistent
+
+Like the version above, but fires bullets in a consistent pattern rather than a random spread.
+================
+*/
+Vector CBaseEntity::FireBulletsConsistent(unsigned int cShots, Vector vecSrc, Vector vecDirShooting, Vector vecSpread, float flDistance, int iBulletType, int iTracerFreq, int iDamage, entvars_t* pevAttacker, int shared_rand)
+{
+	static int tracerCount;
+	TraceResult tr;
+	Vector vecRight = gpGlobals->v_right;
+	Vector vecUp = gpGlobals->v_up;
+	float x = 0, y = 0, z;
+
+	if (pevAttacker == NULL)
+		pevAttacker = pev; // the default attacker is ourselves
+
+	ClearMultiDamage();
+	gMultiDamage.type = DMG_BULLET | DMG_NEVERGIB;
+
+	std::vector<std::pair<float, float>> spread = {
+		{0, 0},         // Dummy for starting at 1
+		{0, 0}, {0, 0}, // First two pellets are perfectly accurate
+		{0.8, 0},       // Second pellet leans right
+		{-0.8, 0},      // Third pellet leans left
+		{0, 0.6},       // Fourth pellet leans up
+		{0, -0.6},      // Fifth pellet leans down
+		{0.6, 0.6},		// Sixth pellet up-right
+		{-0.6, 0.6},	// Seventh pellet up-left
+		{0.6, -0.6},	// Eighth pellet down-right
+		{-0.6, -0.6},	// Ninth pellet down-left
+		{0, 0.4},		// Tenth pellet slight up
+		{0.4, -0.4},	// Eleventh pellet slight down-right
+		{-0.4, -0.4},	// Twelth pellet slight down-left
+	};
+
+	for (unsigned int iShot = 1; iShot <= cShots; iShot++)
+	{
+		//x = UTIL_SharedRandomFloat(shared_rand + iShot, -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (1 + iShot), -0.5, 0.5);
+		//y = UTIL_SharedRandomFloat(shared_rand + (2 + iShot), -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (3 + iShot), -0.5, 0.5);
+		x = spread[iShot%13].first;
+		z = spread[iShot%13].second;
 
 		Vector vecDir = vecDirShooting +
 						x * vecSpread.x * vecRight +

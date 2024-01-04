@@ -30,6 +30,9 @@
 #include "../com_weapons.h"
 #include "../demo.h"
 
+#include <vector>
+#include <utility>
+
 extern int g_iUser1;
 
 // Pool of client side entities/entvars_t
@@ -249,6 +252,51 @@ Vector CBaseEntity::FireBulletsPlayer(unsigned int cShots, Vector vecSrc, Vector
 			// get circular gaussian spread
 			x = UTIL_SharedRandomFloat(shared_rand + iShot, -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (1 + iShot), -0.5, 0.5);
 			y = UTIL_SharedRandomFloat(shared_rand + (2 + iShot), -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (3 + iShot), -0.5, 0.5);
+			z = x * x + y * y;
+		}
+	}
+
+	return Vector(x * vecSpread.x, y * vecSpread.y, 0.0);
+}
+
+Vector CBaseEntity::FireBulletsConsistent(unsigned int cShots, Vector vecSrc, Vector vecDirShooting, Vector vecSpread, float flDistance, int iBulletType, int iTracerFreq, int iDamage, entvars_t* pevAttacker, int shared_rand)
+{
+	float x = 0, y = 0, z;
+
+	std::vector<std::pair<float, float>> spread = {
+		{0, 0},			// Dummy for starting at 1
+		{0, 0}, {0, 0}, // First two pellets are perfectly accurate
+		{0.8, 0},		// Second pellet leans right
+		{-0.8, 0},		// Third pellet leans left
+		{0, 0.6},		// Fourth pellet leans up
+		{0, -0.6},		// Fifth pellet leans down
+		{0.6, 0.6},		// Sixth pellet up-right
+		{-0.6, 0.6},	// Seventh pellet up-left
+		{0.6, -0.6},	// Eighth pellet down-right
+		{-0.6, -0.6},	// Ninth pellet down-left
+		{0, 0.4},		// Tenth pellet slight up
+		{0.4, -0.4},	// Eleventh pellet slight down-right
+		{-0.4, -0.4},	// Twelth pellet slight down-left
+	};
+
+	for (unsigned int iShot = 1; iShot <= cShots; iShot++)
+	{
+		if (pevAttacker == NULL)
+		{
+			// get circular gaussian spread
+			do
+			{
+				//x = RANDOM_FLOAT(-0.5, 0.5) + RANDOM_FLOAT(-0.5, 0.5);
+				//y = RANDOM_FLOAT(-0.5, 0.5) + RANDOM_FLOAT(-0.5, 0.5);
+				z = x * x + y * y;
+			} while (z > 1);
+		}
+		else
+		{
+			//x = UTIL_SharedRandomFloat(shared_rand + iShot, -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (1 + iShot), -0.5, 0.5);
+			//y = UTIL_SharedRandomFloat(shared_rand + (2 + iShot), -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (3 + iShot), -0.5, 0.5);
+			x = spread[iShot % 13].first;
+			z = spread[iShot % 13].second;
 			z = x * x + y * y;
 		}
 	}
