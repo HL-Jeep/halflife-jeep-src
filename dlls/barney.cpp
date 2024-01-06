@@ -53,6 +53,7 @@ public:
 	void HandleAnimEvent(MonsterEvent_t* pEvent) override;
 
 	void RunTask(Task_t* pTask) override;
+	void MonsterThink();
 	void StartTask(Task_t* pTask) override;
 	int ObjectCaps() override { return CTalkMonster::ObjectCaps() | FCAP_IMPULSE_USE; }
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
@@ -80,6 +81,7 @@ public:
 	bool m_fGunDrawn;
 	float m_painTime;
 	float m_checkAttackTime;
+	float m_lastHealTime;
 	bool m_lastAttackCheck;
 
 	// UNDONE: What is this for?  It isn't used?
@@ -97,6 +99,7 @@ TYPEDESCRIPTION CBarney::m_SaveData[] =
 		DEFINE_FIELD(CBarney, m_checkAttackTime, FIELD_TIME),
 		DEFINE_FIELD(CBarney, m_lastAttackCheck, FIELD_BOOLEAN),
 		DEFINE_FIELD(CBarney, m_flPlayerDamage, FIELD_FLOAT),
+		DEFINE_FIELD(CBarney, m_lastHealTime, FIELD_FLOAT),
 };
 
 IMPLEMENT_SAVERESTORE(CBarney, CTalkMonster);
@@ -228,7 +231,17 @@ void CBarney::RunTask(Task_t* pTask)
 }
 
 
+void CBarney::MonsterThink()
+{
+	CBaseMonster::MonsterThink();
 
+	float delta = gpGlobals->time - m_lastHealTime;
+	// Health regen
+	if (pev->health < gSkillData.barneyHealth) {
+		pev->health += 3 * delta;
+	}
+	m_lastHealTime = gpGlobals->time;
+}
 
 //=========================================================
 // ISoundMask - returns a bit mask indicating which types
@@ -409,6 +422,7 @@ void CBarney::Spawn()
 
 	pev->body = 0; // gun in holster
 	m_fGunDrawn = false;
+	m_lastHealTime = gpGlobals->time;
 
 	m_afCapability = bits_CAP_HEAR | bits_CAP_TURN_HEAD | bits_CAP_DOORS_GROUP;
 
