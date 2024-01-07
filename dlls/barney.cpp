@@ -127,6 +127,29 @@ Schedule_t slBaFollow[] =
 };
 
 //=========================================================
+// Take cover from enemy! Tries lateral cover before node
+// cover!
+//=========================================================
+Task_t tlBarneyTakeCoverFromEnemy[] =
+	{
+		{TASK_SET_FAIL_SCHEDULE, (float)SCHED_ARM_WEAPON}, // Can't run, just shoot!
+		{TASK_FIND_COVER_FROM_ENEMY, (float)0},
+		{TASK_RUN_PATH, (float)0},
+		{TASK_WAIT_FOR_MOVEMENT, (float)0},
+		{TASK_REMEMBER, (float)bits_MEMORY_INCOVER},
+		{TASK_FACE_ENEMY, (float)0},
+};
+
+Schedule_t slBarneyTakeCoverFromEnemy[] =
+	{
+		{tlBarneyTakeCoverFromEnemy,
+			ARRAYSIZE(tlBarneyTakeCoverFromEnemy),
+			bits_COND_NEW_ENEMY,
+			0,
+			"BarneyTakeCoverFromEnemy"},
+};
+
+//=========================================================
 // BarneyDraw- much better looking draw schedule for when
 // barney knows who he's gonna attack.
 //=========================================================
@@ -203,6 +226,7 @@ DEFINE_CUSTOM_SCHEDULES(CBarney){
 	slBarneyEnemyDraw,
 	slBaFaceTarget,
 	slIdleBaStand,
+	slBarneyTakeCoverFromEnemy
 };
 
 
@@ -238,7 +262,7 @@ void CBarney::MonsterThink()
 	float delta = gpGlobals->time - m_lastHealTime;
 	// Health regen
 	if (pev->health < gSkillData.barneyHealth) {
-		pev->health += 3 * delta;
+		pev->health += 5 * delta;
 	}
 	m_lastHealTime = gpGlobals->time;
 }
@@ -354,7 +378,7 @@ void CBarney::BarneyFirePistol()
 	SetBlending(0, angDir.x);
 	pev->effects = EF_MUZZLEFLASH;
 
-	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_2DEGREES, 1024, BULLET_MONSTER_9MM);
+	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_1DEGREES, 1024, BULLET_MONSTER_9MM);
 
 	int pitchShift = RANDOM_LONG(0, 20);
 
@@ -633,6 +657,10 @@ Schedule_t* CBarney::GetScheduleOfType(int Type)
 
 	switch (Type)
 	{
+	case SCHED_TAKE_COVER_FROM_ENEMY:
+		return &slBarneyTakeCoverFromEnemy[0];
+		break;
+
 	case SCHED_ARM_WEAPON:
 		if (m_hEnemy != NULL)
 		{
@@ -705,9 +733,8 @@ Schedule_t* CBarney::GetSchedule()
 			return CBaseMonster::GetSchedule();
 		}
 
-		// always act surprized with a new enemy
-		if (HasConditions(bits_COND_NEW_ENEMY) && HasConditions(bits_COND_LIGHT_DAMAGE))
-			return GetScheduleOfType(SCHED_SMALL_FLINCH);
+		if (HasConditions(bits_COND_LIGHT_DAMAGE))
+			return GetScheduleOfType(SCHED_TAKE_COVER_FROM_ENEMY); // Find cover. Don't just stand around like a dummy
 
 		// wait for one schedule to draw gun
 		if (!m_fGunDrawn)
