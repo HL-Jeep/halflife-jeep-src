@@ -64,6 +64,7 @@ bool CHudHealth::Init()
 
 	memset(m_dmg, 0, sizeof(DAMAGE_IMAGE) * NUM_DMG_TYPES);
 
+	CVAR_CREATE("np_use_physics_projectiles", "1", FCVAR_ARCHIVE);
 
 	gHUD.AddHudElem(this);
 	return true;

@@ -820,7 +820,7 @@ void HUD_WeaponsPostThink(local_state_s* from, local_state_s* to, usercmd_t* cmd
 	if (g_runfuncs && (HUD_GetWeaponAnim() != to->client.weaponanim))
 	{
 		//Make sure the 357 has the right body
-		g_Python.pev->body = bIsMultiplayer() ? 1 : 0;
+		g_Python.pev->body = 1; // Always use laser sight
 
 		// Force a fixed anim down to viewmodel
 		HUD_SendWeaponAnim(to->client.weaponanim, pWeapon->pev->body, true);

@@ -556,6 +556,8 @@ void CWorld::Precache()
 
 	ClientPrecache();
 
+	PRECACHE_MODEL("models/bullet.mdl"); // We're going to always want this
+
 	// sounds used from C physics code
 	PRECACHE_SOUND("common/null.wav"); // clears sound channels
 

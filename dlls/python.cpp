@@ -22,6 +22,141 @@
 #include "gamerules.h"
 #include "UserMessages.h"
 
+#define PY357_AIR_VELOCITY 5000 // TODO: Just pass this in constructor
+
+#ifndef CLIENT_DLL
+
+class CBullet : public CBaseEntity
+{
+	void Spawn() override;
+	void Precache() override;
+	int Classify() override;
+	void EXPORT BubbleThink();
+	void EXPORT BulletTouch(CBaseEntity* pOther);
+	void EXPORT ExplodeThink();
+
+public:
+	static CBullet* BulletCreate();
+};
+LINK_ENTITY_TO_CLASS(bullet, CBullet);
+
+CBullet* CBullet::BulletCreate()
+{
+	// Create a new entity with CBullet private data
+	CBullet* pBullet = GetClassPtr((CBullet*)NULL);
+	pBullet->pev->classname = MAKE_STRING("bullet");
+	pBullet->Spawn();
+
+	return pBullet;
+}
+
+void CBullet::Spawn()
+{
+	Precache();
+	pev->movetype = MOVETYPE_FLY;
+	pev->solid = SOLID_BBOX;
+
+	pev->gravity = 0.5;
+
+	SET_MODEL(ENT(pev), "models/bullet.mdl");
+
+	UTIL_SetOrigin(pev, pev->origin);
+	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
+
+	SetTouch(&CBullet::BulletTouch);
+	SetThink(&CBullet::BubbleThink);
+	pev->nextthink = gpGlobals->time + 0.2;
+}
+
+
+void CBullet::Precache()
+{
+	PRECACHE_MODEL("models/bullet.mdl");
+	PRECACHE_SOUND("weapons/xbow_hitbod1.wav");
+	PRECACHE_SOUND("weapons/xbow_hitbod2.wav");
+}
+
+
+int CBullet::Classify()
+{
+	return CLASS_NONE;
+}
+
+void CBullet::BulletTouch(CBaseEntity* pOther)
+{
+	SetTouch(NULL);
+	SetThink(NULL);
+
+	if (0 != pOther->pev->takedamage)
+	{
+		TraceResult tr = UTIL_GetGlobalTrace();
+		entvars_t* pevOwner;
+
+		pevOwner = VARS(pev->owner);
+
+		// UNDONE: this needs to call TraceAttack instead
+		ClearMultiDamage();
+
+		if (pOther->IsPlayer())
+		{
+			pOther->TraceAttack(pevOwner, gSkillData.plrDmg357, pev->velocity.Normalize(), &tr, DMG_NEVERGIB);  // TODO: Allow doing this for any bullet type
+		}
+		else
+		{
+			pOther->TraceAttack(pevOwner, gSkillData.plrDmg357, pev->velocity.Normalize(), &tr, DMG_BULLET | DMG_NEVERGIB);  // TODO: Allow doing this for any bullet type
+		}
+
+		ApplyMultiDamage(pev, pevOwner);
+
+		pev->velocity = Vector(0, 0, 0);
+		// play body "thwack" sound
+		switch (RANDOM_LONG(0, 1))
+		{
+		case 0:
+			EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/xbow_hitbod1.wav", 1, ATTN_NORM); // TODO: Other thwack sounds?
+			break;
+		case 1:
+			EMIT_SOUND(ENT(pev), CHAN_BODY, "weapons/xbow_hitbod2.wav", 1, ATTN_NORM);
+			break;
+		}
+
+		if (!g_pGameRules->IsMultiplayer())
+		{
+			Killed(pev, GIB_NEVER);
+		}
+	}
+	else
+	{
+		// We need to do a trace here so we can do things like place a decal and play a sound
+		TraceResult tr;
+		// Using normalized pev->velocity because angles are weird in rare cases for....some reason
+		Vector vecStart = pev->origin - (pev->velocity.Normalize() * 0.1f); // Back up the origin just a little bit so we clip walls less
+		Vector vecEnd = pev->origin + (pev->velocity.Normalize() * 10.0f);
+		UTIL_TraceLine(vecStart, vecEnd, ignore_monsters, ENT(pev) /*pentIgnore*/, &tr);
+
+		if (tr.flFraction != 1.0)
+		{
+			DecalGunshot(&tr, BULLET_PLAYER_357); // TODO: Allow doing this for any bullet type
+			TEXTURETYPE_PlaySound(&tr, vecStart, vecEnd, BULLET_PLAYER_357);
+		}
+
+		SetThink(&CBullet::SUB_Remove);
+		pev->nextthink = gpGlobals->time;
+	}
+}
+
+void CBullet::BubbleThink()
+{
+	pev->nextthink = gpGlobals->time + 0.1;
+
+	if (pev->waterlevel == 0)
+		return;
+
+	UTIL_BubbleTrail(pev->origin - pev->velocity * 0.1, pev->origin, 1); // TODO: Maybe increase bubblage since these bullets will tend to move fast
+}
+
+#endif
+
 LINK_ENTITY_TO_CLASS(weapon_python, CPython);
 LINK_ENTITY_TO_CLASS(weapon_357, CPython);
 
@@ -108,8 +243,81 @@ void CPython::SecondaryAttack()
 	m_flNextSecondaryAttack = 0.5;
 }
 
+void CPython::FireBullet()
+{
+	TraceResult tr;
+
+	// don't fire underwater
+	if (m_pPlayer->pev->waterlevel == 3)
+	{
+		PlayEmptySound();
+		m_flNextPrimaryAttack = 0.15;
+		return;
+	}
+
+	if (m_iClip <= 0)
+	{
+		if (m_fFireOnEmpty)
+		{
+			PlayEmptySound();
+			m_flNextPrimaryAttack = 0.15;
+		}
+
+		return;
+	}
+
+	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
+	m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+	m_iClip--;
+
+	int flags;
+#if defined(CLIENT_WEAPONS)
+	flags = FEV_NOTHOST;
+#else
+	flags = 0;
+#endif
+
+	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usFirePython, 0.0, g_vecZero, g_vecZero, 0, 0, m_iClip, 0, 0, 0);
+
+	// player "shoot" animation
+	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+
+	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+	UTIL_MakeVectors(anglesAim);
+
+	anglesAim.x = -anglesAim.x;
+	Vector vecSrc = m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2;
+	Vector vecDir = gpGlobals->v_forward;
+
+#ifndef CLIENT_DLL
+	CBullet* pBullet = CBullet::BulletCreate();
+	pBullet->pev->origin = vecSrc;
+	pBullet->pev->angles = anglesAim;
+	pBullet->pev->owner = m_pPlayer->edict();
+	pBullet->pev->velocity = vecDir * PY357_AIR_VELOCITY;
+	pBullet->pev->speed = PY357_AIR_VELOCITY;
+	pBullet->pev->avelocity.z = 10;
+#endif
+
+	if (0 == m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+		// HEV suit - indicate out of ammo condition
+		m_pPlayer->SetSuitUpdate("!HEV_AMO0", false, 0);
+
+	m_flNextPrimaryAttack = 0.75;
+	m_flTimeWeaponIdle = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+}
+
 void CPython::PrimaryAttack()
 {
+	bool use_physics_projectiles = CVAR_GET_FLOAT("np_use_physics_projectiles") != 0;
+
+	if (use_physics_projectiles)
+	{
+		FireBullet();
+		return;
+	}
+
 	// don't fire underwater
 	if (m_pPlayer->pev->waterlevel == 3)
 	{
@@ -146,7 +354,7 @@ void CPython::PrimaryAttack()
 	Vector vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
 
 	Vector vecDir;
-	vecDir = m_pPlayer->FireBulletsConsistent(1, vecSrc, vecAiming, VECTOR_CONE_1DEGREES, 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed); // Effectively makes this 100% accurate
+	vecDir = m_pPlayer->FireBulletsPlayer(1, vecSrc, vecAiming, VECTOR_CONE_1DEGREES, 8192, BULLET_PLAYER_357, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed);
 
 	int flags;
 #if defined(CLIENT_WEAPONS)

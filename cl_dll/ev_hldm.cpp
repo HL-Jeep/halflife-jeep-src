@@ -737,14 +737,11 @@ void EV_FirePython(event_args_t* args)
 
 	if (EV_IsLocal(idx))
 	{
-		// Python uses different body in multiplayer versus single player
-		bool multiplayer = gEngfuncs.GetMaxClients() != 1;
-
 		// Add muzzle flash to current weapon model
 		EV_MuzzleFlash();
-		gEngfuncs.pEventAPI->EV_WeaponAnimation(PYTHON_FIRE1, multiplayer ? 1 : 0);
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(PYTHON_FIRE1, 1); // Always use laser sight
 
-		V_PunchAxis(0, -10.0);
+		V_PunchAxis(0, -8.0);
 	}
 
 	switch (gEngfuncs.pfnRandomLong(0, 1))
@@ -761,7 +758,11 @@ void EV_FirePython(event_args_t* args)
 
 	VectorCopy(forward, vecAiming);
 
-	EV_HLDM_FireBullets(idx, forward, right, up, 1, vecSrc, vecAiming, 8192, BULLET_PLAYER_357, 0, &tracerCount[idx - 1], args->fparam1, args->fparam2);
+	bool use_physics_projectiles = CVAR_GET_FLOAT("np_use_physics_projectiles") != 0;
+	if (!use_physics_projectiles)
+	{
+		EV_HLDM_FireBullets(idx, forward, right, up, 1, vecSrc, vecAiming, 8192, BULLET_PLAYER_357, 0, &tracerCount[idx - 1], args->fparam1, args->fparam2);
+	}
 }
 //======================
 //	    PHYTON END

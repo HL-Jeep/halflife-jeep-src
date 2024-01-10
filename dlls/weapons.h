@@ -585,6 +585,7 @@ public:
 	bool GetItemInfo(ItemInfo* p) override;
 	void PrimaryAttack() override;
 	void SecondaryAttack() override;
+	void FireBullet();
 	bool Deploy() override;
 	void Holster() override;
 	void Reload() override;
