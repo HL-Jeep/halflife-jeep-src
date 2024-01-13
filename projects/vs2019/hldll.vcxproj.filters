@@ -52,6 +52,12 @@
     <Filter Include="Header Files\dlls\bspguy">
       <UniqueIdentifier>{9bd2d6b0-fa96-4893-bcda-67602ccb0b37}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\dlls\jolt">
+      <UniqueIdentifier>{869b3f70-6a85-4829-84e0-2ddae5772df5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\dlls\jolt">
+      <UniqueIdentifier>{bd1084be-45a0-4d6f-838c-ea8b755f79e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\dlls\aflock.cpp">
@@ -411,6 +417,12 @@
     <ClCompile Include="..\..\dlls\bspguy\winding.cpp">
       <Filter>Source Files\dlls\bspguy</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\dlls\jolt\physics_world.cpp">
+      <Filter>Source Files\dlls\jolt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\jolt\physics_util.cpp">
+      <Filter>Source Files\dlls\jolt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dlls\doors.h">
@@ -709,6 +721,12 @@
     </ClInclude>
     <ClInclude Include="..\..\dlls\bspguy\winding.h">
       <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\jolt\physics_util.h">
+      <Filter>Header Files\dlls\jolt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\jolt\physics_world.h">
+      <Filter>Header Files\dlls\jolt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

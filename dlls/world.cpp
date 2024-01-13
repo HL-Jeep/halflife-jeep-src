@@ -36,6 +36,7 @@
 
 #include "filesystem_utils.h"
 #include "bspguy/Bsp.h"
+#include "physics_util.h"
 #include <string>
 
 CGlobalState gGlobalState;
@@ -508,7 +509,7 @@ void BSP_load_test()
 		ALERT(at_console, "\nBSPGUY TEST: FAILED TO FIND WORLDSPAWN!\n");
 	}
 
-	for (size_t i = 0; i < bsp->modelCount; i++)
+	for (int i = 0; i < bsp->modelCount; i++)
 	{
 		BSPGUY::BSPMODEL* model = &bsp->models[i];
 		ALERT(at_console, "Model %d origin: (%f,%f,%f)\n", i, model->vOrigin.x, model->vOrigin.y, model->vOrigin.z);
@@ -533,6 +534,8 @@ CWorld::~CWorld()
 		return;
 	}
 
+	cleanup_physics_world();
+
 	World = nullptr;
 }
 
@@ -541,6 +544,9 @@ void CWorld::Spawn()
 	g_fGameOver = false;
 	Precache();
 	BSP_load_test();
+	init_physics_world();
+	SetThink(&CWorld::PhysicsThink);
+	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.
 }
 
 void CWorld::Precache()
@@ -807,4 +813,14 @@ bool CWorld::KeyValue(KeyValueData* pkvd)
 	}
 
 	return CBaseEntity::KeyValue(pkvd);
+}
+
+void CWorld::PhysicsThink()
+{
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+	while (body_interface.IsActive(sphere_id))
+	{
+		update_physics_world();
+	}
+	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.
 }
