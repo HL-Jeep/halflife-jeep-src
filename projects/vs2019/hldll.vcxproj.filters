@@ -46,6 +46,12 @@
     <Filter Include="Header Files\public">
       <UniqueIdentifier>{ccda2445-0302-44ae-a537-be89f5811329}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\dlls\bspguy">
+      <UniqueIdentifier>{250ec9c3-55ec-4127-ac0a-52bd8f694b91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\dlls\bspguy">
+      <UniqueIdentifier>{9bd2d6b0-fa96-4893-bcda-67602ccb0b37}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\dlls\aflock.cpp">
@@ -366,6 +372,45 @@
     <ClCompile Include="..\..\public\interface.cpp">
       <Filter>Source Files\public</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\Bsp.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\BSP_Entity.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\BSP_util.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\bsptypes.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\Keyvalue.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\lodepng.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\mat4x4.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\rad.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\remap.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\vectors.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\vis.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\Wad.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\bspguy\winding.cpp">
+      <Filter>Source Files\dlls\bspguy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dlls\doors.h">
@@ -619,6 +664,51 @@
     </ClInclude>
     <ClInclude Include="..\..\public\interface.h">
       <Filter>Header Files\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\Bsp.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\BSP_Entity.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\BSP_util.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\bsplimits.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\bsptypes.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\Keyvalue.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\lodepng.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\mat4x4.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\rad.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\remap.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\types.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\vectors.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\vis.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\Wad.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\bspguy\winding.h">
+      <Filter>Header Files\dlls\bspguy</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
