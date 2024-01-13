@@ -34,6 +34,10 @@
 #include "gamerules.h"
 #include "teamplay_gamerules.h"
 
+#include "filesystem_utils.h"
+#include "bspguy/Bsp.h"
+#include <string>
+
 CGlobalState gGlobalState;
 
 extern void W_Precache();
@@ -472,6 +476,45 @@ LINK_ENTITY_TO_CLASS(worldspawn, CWorld);
 #define SF_WORLD_TITLE 0x0002	  // Display game title at startup
 #define SF_WORLD_FORCETEAM 0x0004 // Force teams
 
+void BSP_load_test()
+{
+	ALERT(at_console, "ATTEMPTING TO LOAD BSP WITH BSPGUY\n");
+	std::string gameDir = FileSystem_GetModDirectoryName();
+	std::string level_path = gameDir + std::string("/maps/") + STRING(gpGlobals->mapname) + ".bsp";
+	BSPGUY::Bsp* bsp = new BSPGUY::Bsp(level_path);
+	ALERT(at_console, "BSPGUY TEST: Current level: %s\n", level_path.c_str());
+
+	BSPGUY::Entity *worldspawn = NULL;
+	for (auto &ent : bsp->ents)
+	{
+		ALERT(at_console, "BSPGUY TEST: Loaded ent: %s\n", ent->keyvalues["classname"].c_str());
+
+		if (ent->keyvalues["classname"] == "worldspawn")
+		{
+			worldspawn = ent;
+		}
+	}
+
+	if (worldspawn)
+	{
+		ALERT(at_console, "\nBSPGUY TEST: Worldspawn properties:\n");
+		for (auto &prop : worldspawn->keyvalues)
+		{
+			ALERT(at_console, "%s: %s\n", prop.first.c_str(), prop.second.c_str());
+		}
+	}
+	else 
+	{
+		ALERT(at_console, "\nBSPGUY TEST: FAILED TO FIND WORLDSPAWN!\n");
+	}
+
+	for (size_t i = 0; i < bsp->modelCount; i++)
+	{
+		BSPGUY::BSPMODEL* model = &bsp->models[i];
+		ALERT(at_console, "Model %d origin: (%f,%f,%f)\n", i, model->vOrigin.x, model->vOrigin.y, model->vOrigin.z);
+	}
+}
+
 CWorld::CWorld()
 {
 	if (World)
@@ -497,6 +540,7 @@ void CWorld::Spawn()
 {
 	g_fGameOver = false;
 	Precache();
+	BSP_load_test();
 }
 
 void CWorld::Precache()
