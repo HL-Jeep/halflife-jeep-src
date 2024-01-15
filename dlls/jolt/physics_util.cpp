@@ -9,7 +9,21 @@
 #include <cstdarg>
 #include <thread>
 
+#include "vector.h"
+
 using namespace JPH;
+
+JPH::Vec3 HLVEC_TO_JVEC(HL_VECTOR hl_vec)
+{
+	JPH::Vec3 j_vec(JPH::Float3(hl_vec.z * HL_UNITS_TO_METERS, -hl_vec.y * HL_UNITS_TO_METERS, hl_vec.x * HL_UNITS_TO_METERS));
+	return j_vec;
+}
+
+HL_VECTOR JVEC_TO_HLVEC(JPH::Vec3 j_vec)
+{
+	HL_VECTOR hl_vec(j_vec.GetZ() * METERS_TO_HL_UNITS, -j_vec.GetY() * METERS_TO_HL_UNITS, j_vec.GetX() * METERS_TO_HL_UNITS);
+	return hl_vec;
+}
 
 // Singletons
 
@@ -60,7 +74,10 @@ const uint cMaxContactConstraints = 2048;
 
 // We simulate the physics world in discrete time steps. For now, assume 100Hz (default fps_max in HL). TODO: Get real update rate (or figure out fixed rate).
 const float physics_delta_time = 1.0f / 100.0f;
-// const float physics_delta_time = 0.1f;
+//const float physics_delta_time = 0.05f;
 
 // If you take larger steps than 1 / 100th of a second you need to do multiple collision steps in order to keep the simulation stable. Do 1 collision step per 1 / 100th of a second (round up).
 const int cCollisionSteps = 1;
+
+const float HL_UNITS_TO_METERS = 0.0254f;
+const float METERS_TO_HL_UNITS = 39.3700787402f;

@@ -29,6 +29,7 @@
 #include "scripted.h"
 #include "defaultai.h"
 
+#include "filesystem_utils.h"
 #include "physics_util.h"
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
@@ -1247,7 +1248,6 @@ int CFurniture::Classify()
 	return CLASS_NONE;
 }
 
-
 class CPhysicsProp : public CFurniture
 {
 public:
@@ -1269,14 +1269,18 @@ void CPhysicsProp::Spawn()
 {
 	CFurniture::Spawn();
 
+	init_physics_world();
+	std::string gameDir = FileSystem_GetModDirectoryName();
+	std::string level_collision_path = gameDir + std::string("/maps/") + STRING(gpGlobals->mapname) + "_collision.obj";
+	load_physics_world_geometry_OBJ(level_collision_path);
+
 	float x_half = (pev->absmax.x - pev->absmin.x) / 2;
 	float y_half = (pev->absmax.y - pev->absmin.y) / 2;
 	float z_half = (pev->absmax.z - pev->absmin.z) / 2;
-	JPH::Float3 half_extents_floats(10.0, 10.0, 10.0);
-	JPH::Vec3 half_extents(half_extents_floats);
+	HL_VECTOR half_extents(16, -16, 32);
 
 	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
-	JPH::Body& body = *body_interface.CreateBody(JPH::BodyCreationSettings(new JPH::BoxShape(half_extents), JPH::RVec3(2560.0, 1936.0, 200.0), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, Layers::NON_MOVING));
+	JPH::Body& body = *body_interface.CreateBody(JPH::BodyCreationSettings(new JPH::BoxShape(HLVEC_TO_JVEC(half_extents)), JPH::RVec3(419.5 * HL_UNITS_TO_METERS, -1896.23 * HL_UNITS_TO_METERS, 2736.26 * HL_UNITS_TO_METERS), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, Layers::MOVING));
 	body_interface.AddBody(body.GetID(), JPH::EActivation::Activate);
 
 	m_BodyID = body.GetID();
@@ -1287,16 +1291,26 @@ void CPhysicsProp::Spawn()
 
 void CPhysicsProp::PhysicsThink()
 {
+	update_physics_world();
+
 	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
 
 	JPH::RVec3 physics_position = body_interface.GetPosition(m_BodyID);
-	pev->origin.x = physics_position.GetX();
-	pev->origin.y = physics_position.GetY();
-	pev->origin.z = physics_position.GetZ();
+	UTIL_SetOrigin(pev, JVEC_TO_HLVEC(physics_position));
+	JPH::Vec3 physics_rotation = body_interface.GetRotation(m_BodyID).GetEulerAngles();
+	Vector physics_angles;
+	physics_angles.x = physics_rotation.GetY() * 57.2958;
+	physics_angles.y = physics_rotation.GetX() * 57.2958;
+	physics_angles.z = physics_rotation.GetZ() * 57.2958;
+	//Vector angles = UTIL_VecToAngles(physics_angles);
+	pev->angles.x = physics_angles.x;
+	pev->angles.y = physics_angles.y;
+	pev->angles.z = physics_angles.z;
 
-	ALERT(at_console, "Physics position: (%f, %f, %f)\n", physics_position.GetX(), physics_position.GetY(), physics_position.GetZ());
+	//ALERT(at_console, "Physics position: (%f, %f, %f)\n", pev->origin.x, pev->origin.y, pev->origin.z);
+	//ALERT(at_console, "Physics angle: (%f, %f, %f)\n", physics_angles.x, physics_angles.y, physics_angles.z);
 
-	pev->nextthink = gpGlobals->time;
+	pev->nextthink = gpGlobals->time + physics_delta_time;
 }
 
 LINK_ENTITY_TO_CLASS(prop_physics, CPhysicsProp);

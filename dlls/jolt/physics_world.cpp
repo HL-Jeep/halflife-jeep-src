@@ -82,8 +82,9 @@ void init_physics_world()
 	physics_system->SetBodyActivationListener(&body_activation_listener);
 	physics_system->SetContactListener(&contact_listener);
 
-	Float3 gravity(0, 0, -g_psv_gravity->value);
-	physics_system->SetGravity(Vec3(gravity));
+	HL_VECTOR gravity(0, 0, -g_psv_gravity->value * HL_UNITS_TO_METERS);
+	//JPH::Vec3 gravity(0, 0, 0);
+	physics_system->SetGravity(HLVEC_TO_JVEC(gravity));
 }
 
 void load_physics_world_geometry_OBJ(const std::string &path)
@@ -111,9 +112,8 @@ void load_physics_world_geometry_OBJ(const std::string &path)
 			// Add to vertices
 			float x = 0, y = 0, z = 0;
 			collision_obj_file >> x >> y >> z;
-			JPH::Float3 vertex_floats(x, y, z);
-			JPH::Vec3 vertex(vertex_floats);
-			vertices.push_back(vertex);
+			HL_VECTOR vertex(x, y, z);
+			vertices.push_back(HLVEC_TO_JVEC(vertex));
 		}
 
 		else if (line_header == "f")

@@ -16,6 +16,7 @@
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 
 #include "physics_world.h"
+#include "vector.h"
 
 // Layer that objects can be in, determines which other objects it can collide with
 // Typically you at least want to have 1 layer for moving bodies and 1 layer for static bodies, but you can have more
@@ -159,6 +160,9 @@ public:
 	}
 };
 
+JPH::Vec3 HLVEC_TO_JVEC(HL_VECTOR hl_vec);
+HL_VECTOR JVEC_TO_HLVEC(JPH::Vec3 j_vec);
+
 extern BPLayerInterfaceImpl *broad_phase_layer_interface;
 extern ObjectVsBroadPhaseLayerFilterImpl *object_vs_broadphase_layer_filter;
 extern ObjectLayerPairFilterImpl *object_vs_object_layer_filter;
@@ -171,6 +175,8 @@ extern const JPH::uint cMaxBodyPairs;
 extern const JPH::uint cMaxContactConstraints;
 extern const float physics_delta_time;
 extern const int cCollisionSteps;
+extern const float HL_UNITS_TO_METERS;
+extern const float METERS_TO_HL_UNITS;
 
 extern JPH::PhysicsSystem *physics_system;
 

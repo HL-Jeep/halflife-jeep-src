@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bspguy/Bsp.h"
+#include "vector.h"
 
 void init_physics_world();
 void load_physics_world_geometry_OBJ(const std::string& path);

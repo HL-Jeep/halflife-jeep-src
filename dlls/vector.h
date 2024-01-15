@@ -123,6 +123,8 @@ public:
 	vec_t x = 0, y = 0, z = 0;
 };
 
+typedef Vector HL_VECTOR;
+
 [[nodiscard]] constexpr Vector operator*(float fl, const Vector& v)
 {
 	return v * fl;

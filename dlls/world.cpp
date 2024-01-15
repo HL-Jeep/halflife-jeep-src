@@ -515,12 +515,12 @@ void CWorld::Spawn()
 	g_fGameOver = false;
 	Precache();
 	//BSPGUY::Bsp* bsp = BSP_load_current_level();
-	init_physics_world();
+	/*init_physics_world();
 	std::string gameDir = FileSystem_GetModDirectoryName();
 	std::string level_collision_path = gameDir + std::string("/maps/") + STRING(gpGlobals->mapname) + "_collision.obj";
 	load_physics_world_geometry_OBJ(level_collision_path);
 	SetThink(&CWorld::PhysicsThink);
-	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.
+	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.*/
 }
 
 void CWorld::Precache()
@@ -791,6 +791,8 @@ bool CWorld::KeyValue(KeyValueData* pkvd)
 
 void CWorld::PhysicsThink()
 {
-	update_physics_world();
-	pev->nextthink = gpGlobals->time; // TODO: This will fall behind if not running at 100 FPS.
+	//update_physics_world();
+	physics_system->Update(physics_delta_time, cCollisionSteps, temp_allocator, job_system);
+	
+	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.
 }
