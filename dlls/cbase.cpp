@@ -23,6 +23,9 @@
 #include "game.h"
 #include "pm_shared.h"
 
+#include "physics_util.h"
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+
 void EntvarsKeyvalue(entvars_t* pev, KeyValueData* pkvd);
 
 void OnFreeEntPrivateData(edict_s* pEdict);
@@ -813,3 +816,56 @@ CBaseEntity* CBaseEntity::Create(const char* szName, const Vector& vecOrigin, co
 	DispatchSpawn(pEntity->edict());
 	return pEntity;
 }
+
+class CPhysicsBrush : public CBaseEntity
+{
+public:
+	~CPhysicsBrush() override;
+	void Spawn() override;
+	void EXPORT PhysicsThink();
+
+private:
+	JPH::BodyID m_BodyID;
+};
+
+CPhysicsBrush::~CPhysicsBrush()
+{
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+	body_interface.RemoveBody(m_BodyID);
+}
+
+void CPhysicsBrush::Spawn()
+{
+	CBaseEntity::Spawn();
+
+	float x_half = (pev->absmax.x - pev->absmin.x)/2;
+	float y_half = (pev->absmax.y - pev->absmin.y) / 2;
+	float z_half = (pev->absmax.z - pev->absmin.z) / 2;
+	JPH::Float3 half_extents_floats(32.0, 32.0, 32.0);
+	JPH::Vec3 half_extents(half_extents_floats);
+
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+	JPH::Body& body = *body_interface.CreateBody(JPH::BodyCreationSettings(new JPH::BoxShape(half_extents), JPH::RVec3(2560.0, 1936.0, 96.0), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, Layers::MOVING));
+	body_interface.AddBody(body.GetID(), JPH::EActivation::Activate);
+
+	m_BodyID = body.GetID();
+
+	SetThink(&CPhysicsBrush::PhysicsThink);
+	pev->nextthink = gpGlobals->time + physics_delta_time;
+}
+
+void CPhysicsBrush::PhysicsThink()
+{
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+
+	JPH::RVec3 physics_position = body_interface.GetPosition(m_BodyID);
+	pev->origin.x = physics_position.GetX();
+	pev->origin.y = physics_position.GetY();
+	pev->origin.z = physics_position.GetZ();
+
+	//ALERT(at_console, "Physics position: (%f, %f, %f)\n", physics_position.GetX(), physics_position.GetY(), physics_position.GetZ());
+
+	pev->nextthink = gpGlobals->time + physics_delta_time;
+}
+
+LINK_ENTITY_TO_CLASS(func_physics, CPhysicsBrush);

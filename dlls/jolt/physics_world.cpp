@@ -1,25 +1,25 @@
 // HL includes
 #include "extdll.h"
 #include "util.h"
+#include "game.h"
 
 // Physics includes
 #include "physics_util.h"
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Collision/PhysicsMaterialSimple.h>
 
 // STL includes
 #include <iostream>
 #include <cstdarg>
 #include <thread>
+#include <fstream>
 
 using namespace JPH;
 using namespace JPH::literals;
-
-// Test stuff
-BodyID sphere_id;
-Body* floor_body;
 
 // Callback for traces
 static void TraceImpl(const char* inFMT, ...)
@@ -82,53 +82,67 @@ void init_physics_world()
 	physics_system->SetBodyActivationListener(&body_activation_listener);
 	physics_system->SetContactListener(&contact_listener);
 
-	// The main way to interact with the bodies in the physics system is through the body interface. There is a locking and a non-locking
-	// variant of this. We're going to use the locking version (even though we're not planning to access bodies from multiple threads)
-	BodyInterface &body_interface = physics_system->GetBodyInterface();
+	Float3 gravity(0, 0, -g_psv_gravity->value);
+	physics_system->SetGravity(Vec3(gravity));
+}
 
-	// Next we can create a rigid body to serve as the floor, we make a large box
-	// Create the settings for the collision volume (the shape).
-	// Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
-	BoxShapeSettings floor_shape_settings(Vec3(100.0f, 1.0f, 100.0f));
+void load_physics_world_geometry_OBJ(const std::string &path)
+{
+	BodyInterface& body_interface = physics_system->GetBodyInterface();
 
-	// Create the shape
-	ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
-	ShapeRefC floor_shape = floor_shape_result.Get(); // We don't expect an error here, but you can check floor_shape_result for HasError() / GetError()
+	std::vector<JPH::Vec3> vertices;
+	TriangleList triangles;
 
-	// Create the settings for the body itself. Note that here you can also set other properties like the restitution / friction.
-	BodyCreationSettings floor_settings(floor_shape, RVec3(0.0_r, -1.0_r, 0.0_r), Quat::sIdentity(), EMotionType::Static, Layers::NON_MOVING);
+	// We suck, just load collision from an OBJ instead
+	std::ifstream collision_obj_file(path);
+	// Skip blender header lines
+	char dummy[1024];
+	dummy[0] = '\0';
+	collision_obj_file.getline(dummy, 1024);
+	collision_obj_file.getline(dummy, 1024);
 
-	// Create the actual rigid body
-	floor_body = body_interface.CreateBody(floor_settings); // Note that if we run out of bodies this can return nullptr
+	while (collision_obj_file.good())
+	{
+		std::string line_header = "";
+		collision_obj_file >> line_header;
 
-	// Add it to the world
-	body_interface.AddBody(floor_body->GetID(), EActivation::DontActivate);
+		if (line_header == "v")
+		{
+			// Add to vertices
+			float x = 0, y = 0, z = 0;
+			collision_obj_file >> x >> y >> z;
+			JPH::Float3 vertex_floats(x, y, z);
+			JPH::Vec3 vertex(vertex_floats);
+			vertices.push_back(vertex);
+		}
 
-	// Now create a dynamic body to bounce on the floor
-	// Note that this uses the shorthand version of creating and adding a body to the world
-	BodyCreationSettings sphere_settings(new SphereShape(0.5f), RVec3(0.0_r, 2.0_r, 0.0_r), Quat::sIdentity(), EMotionType::Dynamic, Layers::MOVING);
-	sphere_id = body_interface.CreateAndAddBody(sphere_settings, EActivation::Activate);
+		else if (line_header == "f")
+		{
+			// Create triangle from vertices
+			int v1 = 0, v2 = 0, v3 = 0;
+			collision_obj_file >> v1 >> v2 >> v3;
+			Triangle triangle(vertices[v1-1], vertices[v2-1], vertices[v3-1]);
+			triangles.push_back(triangle);
+		}
+	}
 
-	// Now you can interact with the dynamic body, in this case we're going to give it a velocity.
-	// (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
-	body_interface.SetLinearVelocity(sphere_id, Vec3(0.0f, -5.0f, 0.0f));
+	// Create material
+	PhysicsMaterialList materials;
+	materials.push_back(new PhysicsMaterialSimple("Material 0", Color::sGetDistinctColor(0)));
+
+	// Create mesh and body settings
+	MeshShapeSettings* body_shape_settings = new MeshShapeSettings(triangles, std::move(materials));
+	BodyCreationSettings body_settings(body_shape_settings, RVec3(0.0_r, 0.0_r, 0.0_r), Quat::sIdentity(), EMotionType::Static, Layers::NON_MOVING);
+	// body_settings.ConvertShapeSettings();
+
+	// Create body
+	body_interface.CreateAndAddBody(body_settings, JPH::EActivation::Activate);
 
 	physics_system->OptimizeBroadPhase();
 }
 
-uint step = 0;
 void update_physics_world()
 {
-	// Next step
-	++step;
-
-	BodyInterface& body_interface = physics_system->GetBodyInterface();
-
-	// Output current position and velocity of the sphere
-	RVec3 position = body_interface.GetCenterOfMassPosition(sphere_id);
-	Vec3 velocity = body_interface.GetLinearVelocity(sphere_id);
-	ALERT(at_console, "JOLT: Step %d: Position = (%f, %f, %f), Velocity = (%f, %f, %f)\n", step, position.GetX(), position.GetY(), position.GetZ(), velocity.GetX(), velocity.GetY(), velocity.GetZ());
-
 	// Step the world
 	physics_system->Update(physics_delta_time, cCollisionSteps, temp_allocator, job_system);
 }
@@ -138,16 +152,6 @@ void cleanup_physics_world()
 	ALERT(at_console, "JOLT: Cleaning up Physics World\n");
 
 	BodyInterface& body_interface = physics_system->GetBodyInterface();
-
-	// Remove the sphere from the physics system. Note that the sphere itself keeps all of its state and can be re-added at any time.
-	body_interface.RemoveBody(sphere_id);
-
-	// Destroy the sphere. After this the sphere ID is no longer valid.
-	body_interface.DestroyBody(sphere_id);
-
-	// Remove and destroy the floor
-	body_interface.RemoveBody(floor_body->GetID());
-	body_interface.DestroyBody(floor_body->GetID());
 
 	// Unregisters all types with the factory and cleans up the default material
 	UnregisterTypes();

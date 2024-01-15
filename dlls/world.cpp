@@ -477,43 +477,14 @@ LINK_ENTITY_TO_CLASS(worldspawn, CWorld);
 #define SF_WORLD_TITLE 0x0002	  // Display game title at startup
 #define SF_WORLD_FORCETEAM 0x0004 // Force teams
 
-void BSP_load_test()
+BSPGUY::Bsp* BSP_load_current_level()
 {
 	ALERT(at_console, "ATTEMPTING TO LOAD BSP WITH BSPGUY\n");
 	std::string gameDir = FileSystem_GetModDirectoryName();
 	std::string level_path = gameDir + std::string("/maps/") + STRING(gpGlobals->mapname) + ".bsp";
 	BSPGUY::Bsp* bsp = new BSPGUY::Bsp(level_path);
-	ALERT(at_console, "BSPGUY TEST: Current level: %s\n", level_path.c_str());
-
-	BSPGUY::Entity *worldspawn = NULL;
-	for (auto &ent : bsp->ents)
-	{
-		ALERT(at_console, "BSPGUY TEST: Loaded ent: %s\n", ent->keyvalues["classname"].c_str());
-
-		if (ent->keyvalues["classname"] == "worldspawn")
-		{
-			worldspawn = ent;
-		}
-	}
-
-	if (worldspawn)
-	{
-		ALERT(at_console, "\nBSPGUY TEST: Worldspawn properties:\n");
-		for (auto &prop : worldspawn->keyvalues)
-		{
-			ALERT(at_console, "%s: %s\n", prop.first.c_str(), prop.second.c_str());
-		}
-	}
-	else 
-	{
-		ALERT(at_console, "\nBSPGUY TEST: FAILED TO FIND WORLDSPAWN!\n");
-	}
-
-	for (int i = 0; i < bsp->modelCount; i++)
-	{
-		BSPGUY::BSPMODEL* model = &bsp->models[i];
-		ALERT(at_console, "Model %d origin: (%f,%f,%f)\n", i, model->vOrigin.x, model->vOrigin.y, model->vOrigin.z);
-	}
+	ALERT(at_console, "BSPGUY: Loaded: %s\n", level_path.c_str());
+	return bsp;
 }
 
 CWorld::CWorld()
@@ -543,8 +514,11 @@ void CWorld::Spawn()
 {
 	g_fGameOver = false;
 	Precache();
-	BSP_load_test();
+	//BSPGUY::Bsp* bsp = BSP_load_current_level();
 	init_physics_world();
+	std::string gameDir = FileSystem_GetModDirectoryName();
+	std::string level_collision_path = gameDir + std::string("/maps/") + STRING(gpGlobals->mapname) + "_collision.obj";
+	load_physics_world_geometry_OBJ(level_collision_path);
 	SetThink(&CWorld::PhysicsThink);
 	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.
 }
@@ -817,10 +791,6 @@ bool CWorld::KeyValue(KeyValueData* pkvd)
 
 void CWorld::PhysicsThink()
 {
-	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
-	while (body_interface.IsActive(sphere_id))
-	{
-		update_physics_world();
-	}
-	pev->nextthink = gpGlobals->time + physics_delta_time; // TODO: This will fall behind if not running at 100 FPS.
+	update_physics_world();
+	pev->nextthink = gpGlobals->time; // TODO: This will fall behind if not running at 100 FPS.
 }

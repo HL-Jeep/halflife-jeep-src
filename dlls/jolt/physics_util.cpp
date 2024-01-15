@@ -42,7 +42,7 @@ JobSystemThreadPool* job_system;
 
 // This is the max amount of rigid bodies that you can add to the physics system. If you try to add more you'll get an error.
 // Note: Max ents in HL1 is 2048, so this value works fine.
-const uint cMaxBodies = 2048;
+const uint cMaxBodies = 4096;
 
 // This determines how many mutexes to allocate to protect rigid bodies from concurrent access. Set it to 0 for the default settings.
 const uint cNumBodyMutexes = 0;
@@ -60,6 +60,7 @@ const uint cMaxContactConstraints = 2048;
 
 // We simulate the physics world in discrete time steps. For now, assume 100Hz (default fps_max in HL). TODO: Get real update rate (or figure out fixed rate).
 const float physics_delta_time = 1.0f / 100.0f;
+// const float physics_delta_time = 0.1f;
 
 // If you take larger steps than 1 / 100th of a second you need to do multiple collision steps in order to keep the simulation stable. Do 1 collision step per 1 / 100th of a second (round up).
 const int cCollisionSteps = 1;

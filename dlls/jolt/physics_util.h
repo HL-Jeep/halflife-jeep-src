@@ -176,6 +176,3 @@ extern JPH::PhysicsSystem *physics_system;
 
 extern JPH::TempAllocatorImpl* temp_allocator;
 extern JPH::JobSystemThreadPool* job_system;
-
-// Test
-extern JPH::BodyID sphere_id;

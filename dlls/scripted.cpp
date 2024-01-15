@@ -29,7 +29,8 @@
 #include "scripted.h"
 #include "defaultai.h"
 
-
+#include "physics_util.h"
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
 /*
 classname "scripted_sequence"
@@ -1245,3 +1246,57 @@ int CFurniture::Classify()
 {
 	return CLASS_NONE;
 }
+
+
+class CPhysicsProp : public CFurniture
+{
+public:
+	~CPhysicsProp() override;
+	void Spawn() override;
+	void EXPORT PhysicsThink();
+
+private:
+	JPH::BodyID m_BodyID;
+};
+
+CPhysicsProp::~CPhysicsProp()
+{
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+	body_interface.RemoveBody(m_BodyID);
+}
+
+void CPhysicsProp::Spawn()
+{
+	CFurniture::Spawn();
+
+	float x_half = (pev->absmax.x - pev->absmin.x) / 2;
+	float y_half = (pev->absmax.y - pev->absmin.y) / 2;
+	float z_half = (pev->absmax.z - pev->absmin.z) / 2;
+	JPH::Float3 half_extents_floats(10.0, 10.0, 10.0);
+	JPH::Vec3 half_extents(half_extents_floats);
+
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+	JPH::Body& body = *body_interface.CreateBody(JPH::BodyCreationSettings(new JPH::BoxShape(half_extents), JPH::RVec3(2560.0, 1936.0, 200.0), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, Layers::NON_MOVING));
+	body_interface.AddBody(body.GetID(), JPH::EActivation::Activate);
+
+	m_BodyID = body.GetID();
+
+	SetThink(&CPhysicsProp::PhysicsThink);
+	pev->nextthink = gpGlobals->time + physics_delta_time;
+}
+
+void CPhysicsProp::PhysicsThink()
+{
+	JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+
+	JPH::RVec3 physics_position = body_interface.GetPosition(m_BodyID);
+	pev->origin.x = physics_position.GetX();
+	pev->origin.y = physics_position.GetY();
+	pev->origin.z = physics_position.GetZ();
+
+	ALERT(at_console, "Physics position: (%f, %f, %f)\n", physics_position.GetX(), physics_position.GetY(), physics_position.GetZ());
+
+	pev->nextthink = gpGlobals->time;
+}
+
+LINK_ENTITY_TO_CLASS(prop_physics, CPhysicsProp);
